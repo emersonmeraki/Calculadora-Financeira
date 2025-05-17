@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Financeira Inteligente e Meta de Investimento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; 
+        }
+        html {
+            scroll-behavior: smooth; 
+        }
+        .main-container {
+            background-color: #ffffff; 
+            padding: 2rem; 
+            border-radius: 0.75rem; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+            width: 100%;
+            max-width: 520px; 
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem; 
+            border: 1px solid #d1d5db; 
+            border-radius: 0.5rem; 
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.075); 
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .input-field:focus {
+            border-color: #3b82f6; 
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25); 
+        }
+        .input-field:disabled { 
+            background-color: #e5e7eb; 
+            cursor: not-allowed;
+        }
+        .display-field-formatted { /* Para campos que apenas exibem valor formatado */
+            width: 100%;
+            padding: 0.75rem 1rem; 
+            border: 1px solid #d1d5db; 
+            border-radius: 0.5rem; 
+            background-color: #f3f4f6; 
+            color: #374151; 
+            cursor: default;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.075);
+            line-height: 1.5; 
+        }
+        .result-card {
+            background-color: #f9fafb; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 0.5rem; 
+            padding: 1.5rem; 
+            margin-top: 1.5rem; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04); 
+        }
+        .result-card h3 {
+            font-size: 1.125rem; 
+            font-weight: 600; 
+            color: #1f2937; 
+            margin-bottom: 1rem; 
+        }
+        .result-card p {
+            color: #374151; 
+            margin-bottom: 0.5rem; 
+            font-size: 0.95rem; 
+        }
+        .result-card span {
+            font-weight: 600; 
+        }
+        .result-card .valor-positivo { color: #10b981; }
+        .result-card .valor-negativo { color: #ef4444; }
+        .result-card .valor-neutro { color: #f59e0b; }
+        .result-card .valor-destaque { color: #3b82f6; }
+        .result-card .nota-transicao {
+            font-size: 0.8rem;
+            color: #4b5563; 
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed #d1d5db;
+        }
+
+        .error-message {
+            color: #ef4444; 
+            font-weight: 500; 
+            margin-top: 0.5rem; 
+            text-align: center;
+            font-size: 0.875rem; 
+        }
+        .feedback-message { 
+            color: #059669; 
+            font-weight: 500;
+            margin-top: 0.25rem; 
+            text-align: left; 
+            font-size: 0.875rem; 
+            height: 1.25rem; 
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .feedback-message.show {
+            opacity: 1;
+        }
+        .progress-bar-container {
+            background-color: #e5e7eb; 
+            border-radius: 0.375rem; 
+            overflow: hidden;
+            height: 2rem; 
+            width: 100%;
+            margin-top: 0.5rem; 
+            border: 1px solid #d1d5db; 
+            position: relative;
+        }
+        .progress-bar-fill {
+            background-color: #2563eb; 
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+            border-radius: 0.375rem; 
+        }
+        .progress-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem; 
+            font-weight: 600; 
+        }
+        .label-text {
+            display: block;
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            color: #374151; 
+            margin-bottom: 0.375rem; 
+        }
+        .primary-button {
+            width: 100%;
+            background-color: #10b981; 
+            color: white;
+            font-weight: 600; 
+            padding: 0.875rem 1rem; 
+            border-radius: 0.5rem; 
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1); 
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, opacity 0.2s ease-in-out;
+        }
+        .primary-button:hover:not(:disabled) {
+            background-color: #059669; 
+            transform: translateY(-1px);
+        }
+        .primary-button:focus:not(:disabled) {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.3); 
+        }
+        .primary-button:disabled {
+            background-color: #9ca3af; 
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .secondary-button { /* Botão de "+ Aportar" */
+            background-color: #3b82f6; 
+            color: white;
+            font-weight: 500;
+            padding: 0.625rem 1rem; 
+            border-radius: 0.375rem; 
+            box-shadow: 0 2px 4px -1px rgba(59, 130, 246, 0.2), 0 1px 2px -1px rgba(59, 130, 246, 0.1);
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            height: calc(0.75rem * 2 + 1rem + 2px + 0.75rem); 
+        }
+        .secondary-button:hover {
+            background-color: #2563eb; 
+            transform: translateY(-1px);
+        }
+        .secondary-button:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.3);
+        }
+        .tertiary-button { 
+            background-color: #8b5cf6; 
+            color: white;
+            font-weight: 500;
+            padding: 0.75rem 1rem; 
+            border-radius: 0.375rem; 
+            box-shadow: 0 2px 4px -1px rgba(139, 92, 246, 0.2), 0 1px 2px -1px rgba(139, 92, 246, 0.1);
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, opacity 0.2s ease-in-out;
+            margin-top: 0.75rem; 
+            width: 100%;
+        }
+        .tertiary-button:hover:not(:disabled) {
+            background-color: #7c3aed; 
+            transform: translateY(-1px);
+        }
+        .tertiary-button:focus:not(:disabled) {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.3);
+        }
+        .tertiary-button:disabled {
+            background-color: #c4b5fd; 
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .meta-atingida-mensagem {
+            background-color: #d1fae5; 
+            color: #065f46; 
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 1.5rem; 
+        }
+        .rendimento-display {
+            margin-top: 1rem; 
+            padding: 0.75rem; 
+            background-color: #f9fafb; 
+            border-radius: 0.375rem; 
+            border: 1px solid #e5e7eb; 
+        }
+        .rendimento-display p {
+            font-size: 0.9rem;
+            color: #374151; 
+            margin-bottom: 0.25rem; 
+        }
+        .rendimento-display .valor {
+            font-weight: 600;
+        }
+        .rendimento-display .positivo {
+            color: #10b981; 
+        }
+        .rendimento-display .negativo {
+            color: #ef4444; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="main-container">
+        <header class="text-center mb-6 sm:mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800">
+                Calculadora Financeira  
+            </h1>
+            <p class="text-sm text-slate-600 mt-2">Planeje seus aportes e acompanhe sua meta!</p>
+        </header>
+
+        <div id="mensagemGlobalContainer" class="mb-6">
+            </div>
+
+        <div class="space-y-6">
+            <div>
+                <label for="rendaFaturada" class="label-text">Renda Faturada (R$):</label>
+                <input type="text" id="rendaFaturada" name="rendaFaturada"
+                       class="input-field"
+                       inputmode="decimal"
+                       aria-label="Insira sua renda faturada">
+            </div>
+
+            <div class="border-t border-gray-200 pt-6" id="secaoMetaInvestimento">
+                <h2 class="text-xl font-semibold text-slate-700 mb-4">Minha Meta de Investimento</h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label for="totalAportadoDisplay" class="label-text">Total Aportado por Você (R$):</label>
+                        <div id="totalAportadoDisplay" class="display-field-formatted" aria-label="Total de dinheiro que você aplicou">R$ 0,00</div>
+                        <div id="aporteFeedback" class="feedback-message"></div> 
+                    </div>
+
+                    <div class="mt-3 flex items-end space-x-2">
+                        <div class="flex-grow">
+                            <label for="valorAporteManualInput" class="label-text">Adicionar ao Total Aportado (R$):</label>
+                            <input type="text" id="valorAporteManualInput" class="input-field" inputmode="decimal" aria-label="Valor a adicionar manualmente aos seus aportes">
+                        </div>
+                        <button id="adicionarAporteManualBtn" class="secondary-button whitespace-nowrap">
+                            + Aportar
+                        </button>
+                    </div>
+                    <div id="erroAporteManualContainer" class="mt-1"></div>
+
+
+                    <div>
+                        <label for="saldoAtualReservaInput" class="label-text">Saldo Atual da Reserva (R$):</label>
+                        <input type="text" id="saldoAtualReservaInput" class="input-field" inputmode="decimal" aria-label="Saldo atual da sua conta de investimento">
+                    </div>
+                </div>
+
+                <div id="rendimentoReservaDisplay" class="rendimento-display">
+                    <p>Rendimento Total da Reserva:</p>
+                    <p>Valor: <span id="rendimentoValorDisplay" class="valor">R$ 0,00</span></p>
+                    <p>Percentual: <span id="rendimentoPercentualDisplay" class="valor">0,00%</span></p>
+                </div>
+                 
+                <div class="mt-4">
+                    <div class="flex justify-between items-center text-sm text-gray-600 mb-1">
+                        <span>Progresso da Meta:</span> 
+                        <span id="metaDisplay" class="font-semibold text-blue-600">Meta: R$ 200.000,00</span>
+                    </div>
+                    <div id="progressBarContainer" class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                        <div id="progressText" class="progress-text text-slate-800">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="calcularBtn" class="primary-button">
+                Calcular Divisão Financeira
+            </button>
+        </div>
+
+        <div id="resultadoContainer" class="mt-8">
+            </div>
+    </div>
+
+    <script>
+        // --- ELEMENTOS DO DOM ---
+        const rendaFaturadaInput = document.getElementById('rendaFaturada');
+        const totalAportadoDisplay = document.getElementById('totalAportadoDisplay');
+        const valorAporteManualInput = document.getElementById('valorAporteManualInput');
+        const adicionarAporteManualBtn = document.getElementById('adicionarAporteManualBtn');
+        const erroAporteManualContainer = document.getElementById('erroAporteManualContainer');
+        const aporteFeedback = document.getElementById('aporteFeedback');
+        
+        const saldoAtualReservaInput = document.getElementById('saldoAtualReservaInput');
+        
+        const calcularBtn = document.getElementById('calcularBtn');
+        const resultadoContainer = document.getElementById('resultadoContainer');
+        const mensagemGlobalContainer = document.getElementById('mensagemGlobalContainer');
+        const secaoMetaInvestimento = document.getElementById('secaoMetaInvestimento');
+        
+        const rendimentoValorDisplay = document.getElementById('rendimentoValorDisplay');
+        const rendimentoPercentualDisplay = document.getElementById('rendimentoPercentualDisplay');
+
+        const progressBarContainer = document.getElementById('progressBarContainer');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const progressText = document.getElementById('progressText');
+        const metaDisplay = document.getElementById('metaDisplay');
+
+        // --- CHAVES DO LOCALSTORAGE ---
+        const LOCAL_STORAGE_TOTAL_APORTADO_KEY = 'calculadoraFinanceira_totalAportado_raw';
+        const LOCAL_STORAGE_SALDO_ATUAL_KEY = 'calculadoraFinanceira_saldoAtual_raw';
+        const LOCAL_STORAGE_META_ATINGIDA_KEY = 'calculadoraFinanceira_metaAtingida';
+        const LOCAL_STORAGE_RENDIMENTOS_ATIVOS_KEY = 'calculadoraFinanceira_gastosCobertosPorRendimentos';
+
+        // --- VALORES FIXOS E GLOBAIS ---
+        const META_FIXA_INVESTIMENTO = 200000;
+        let metaAtingida = false; 
+        let gastosCobertosPorRendimentos = false; 
+        let rawTotalAportado = 0;
+        let rawSaldoAtualReserva = 0; 
+        let isCurrentlyFormatting = false; 
+        let feedbackTimeout = null; 
+        let manterResultadoAposSimulacao = false; 
+        let valorRendaAntesDoInput = ""; // Armazena o valor da renda antes do usuário começar a digitar
+
+        // --- FUNÇÕES AUXILIARES ---
+        function formatarMoeda(valor) {
+            if (isNaN(valor) || valor === null) return 'R$ 0,00';
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+        
+        function formatarPorcentagem(valor, comSimbolo = true) {
+            if (isNaN(valor) || valor === null || !isFinite(valor)) return comSimbolo ? '0,00%' : '0,00';
+            let formatado = valor.toFixed(2).replace('.', ',');
+            return comSimbolo ? formatado + '%' : formatado;
+        }
+
+        function parseInputCurrencyValue(formattedValue) {
+            if (typeof formattedValue !== 'string' || !formattedValue) return 0;
+            let numericStr = formattedValue.replace(/R\$\s*/g, '').replace(/\u00A0/g, '');
+            numericStr = numericStr.replace(/\./g, '');
+            numericStr = numericStr.replace(/,/g, '.');
+            const val = parseFloat(numericStr);
+            return isNaN(val) ? 0 : val;
+        }
+        
+        // Modificada para aceitar um segundo parâmetro opcional
+        function realTimeCurrencyFormat(event, dispatchEventForRenda = true) {
+            const input = event.target;
+            if (input.id === 'rendaFaturada' && isCurrentlyFormatting) return; 
+            if (isCurrentlyFormatting && input.id !== 'rendaFaturada') return;
+
+            isCurrentlyFormatting = true;
+
+            let value = input.value;
+            let digits = value.replace(/\D/g, ''); 
+
+            if (digits === "") {
+                input.value = "";
+                // Não resetar isCurrentlyFormatting aqui ainda, será feito no final
+            } else {
+                if (digits.length > 1 && digits.startsWith('0')) {
+                    digits = digits.replace(/^0+/, '');
+                    if(digits === "") digits = "0";
+                }
+                const valueAsCents = parseInt(digits, 10);
+                const formatted = (valueAsCents / 100).toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                input.value = formatted;
+            }
+            
+            try {
+                // Tenta manter o cursor no final, mas pode ser instável.
+                // É melhor fazer isso apenas se o valor realmente mudou para evitar saltos.
+                // No entanto, para simplicidade, mantemos assim por enquanto.
+                const cursorPos = input.value.length;
+                input.setSelectionRange(cursorPos, cursorPos); 
+            } catch (e) { /* Ignora erros */ }
+
+            // Resetar a flag e, se necessário, disparar o evento
+            if (input.id === 'rendaFaturada' && dispatchEventForRenda) {
+                isCurrentlyFormatting = false; // Resetar ANTES de disparar para evitar loop imediato
+                input.dispatchEvent(new Event('input', { bubbles: true, SINALIZADOR_INTERNO_FORMATACAO: true }));
+            } else {
+                isCurrentlyFormatting = false;
+            }
+        }
+
+
+        function mostrarFeedback(elementoFeedback, mensagem) {
+            if (feedbackTimeout) clearTimeout(feedbackTimeout); 
+            elementoFeedback.textContent = mensagem;
+            elementoFeedback.classList.add('show');
+            feedbackTimeout = setTimeout(() => {
+                elementoFeedback.classList.remove('show');
+            }, 3000); 
+        }
+
+        // --- LOCALSTORAGE ---
+        function salvarDados() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_TOTAL_APORTADO_KEY, rawTotalAportado.toString());
+                localStorage.setItem(LOCAL_STORAGE_SALDO_ATUAL_KEY, rawSaldoAtualReserva.toString());
+                localStorage.setItem(LOCAL_STORAGE_META_ATINGIDA_KEY, metaAtingida.toString());
+                localStorage.setItem(LOCAL_STORAGE_RENDIMENTOS_ATIVOS_KEY, gastosCobertosPorRendimentos.toString());
+            } catch (error) {
+                console.error("Erro ao salvar dados no localStorage:", error);
+            }
+        }
+
+        function carregarDados() {
+            try {
+                const totalAportadoSalvoStr = localStorage.getItem(LOCAL_STORAGE_TOTAL_APORTADO_KEY);
+                const saldoAtualSalvoStr = localStorage.getItem(LOCAL_STORAGE_SALDO_ATUAL_KEY);
+                const metaAtingidaSalva = localStorage.getItem(LOCAL_STORAGE_META_ATINGIDA_KEY);
+                const rendimentosAtivosSalvo = localStorage.getItem(LOCAL_STORAGE_RENDIMENTOS_ATIVOS_KEY);
+
+                metaDisplay.textContent = `Meta: ${formatarMoeda(META_FIXA_INVESTIMENTO)}`;
+
+                rawTotalAportado = (totalAportadoSalvoStr !== null && !isNaN(parseFloat(totalAportadoSalvoStr))) ? parseFloat(totalAportadoSalvoStr) : 0;
+                totalAportadoDisplay.textContent = formatarMoeda(rawTotalAportado);
+
+                rawSaldoAtualReserva = (saldoAtualSalvoStr !== null && !isNaN(parseFloat(saldoAtualSalvoStr))) ? parseFloat(saldoAtualSalvoStr) : 0;
+                saldoAtualReservaInput.value = formatarMoeda(rawSaldoAtualReserva);
+                
+                metaAtingida = metaAtingidaSalva === 'true';
+                gastosCobertosPorRendimentos = rendimentosAtivosSalvo === 'true';
+                
+                atualizarDisplayRendimento();
+                atualizarVisualMetaAtingida();
+                atualizarBarraDeProgresso(); 
+            } catch (error) {
+                console.error("Erro ao carregar dados do localStorage:", error);
+                rawTotalAportado = 0;
+                rawSaldoAtualReserva = 0;
+                totalAportadoDisplay.textContent = formatarMoeda(0);
+                saldoAtualReservaInput.value = formatarMoeda(0);
+                metaAtingida = false;
+                gastosCobertosPorRendimentos = false;
+                atualizarDisplayRendimento();
+                atualizarBarraDeProgresso();
+                atualizarVisualMetaAtingida();
+            } finally {
+                const rendaAtual = parseInputCurrencyValue(rendaFaturadaInput.value);
+                if (rendaAtual > 0) {
+                    calcularBtn.disabled = false;
+                } else {
+                    calcularBtn.disabled = true;
+                }
+                 // Formata os campos de input que podem ter sido preenchidos pelo navegador
+                [rendaFaturadaInput, valorAporteManualInput, saldoAtualReservaInput].forEach(input => {
+                    if (input.value) realTimeCurrencyFormat({target: input}, false); // Formata sem disparar evento extra para renda
+                });
+            }
+        }
+        
+        // --- ATUALIZAÇÃO DA INTERFACE (UI) ---
+        function atualizarDisplayRendimento() {
+            const rendimentoValor = rawSaldoAtualReserva - rawTotalAportado;
+            const rendimentoPercentual = (rawTotalAportado > 0) ? (rendimentoValor / rawTotalAportado) * 100 : 0;
+
+            rendimentoValorDisplay.textContent = formatarMoeda(rendimentoValor);
+            rendimentoPercentualDisplay.textContent = formatarPorcentagem(rendimentoPercentual);
+
+            if (rendimentoValor > 0) {
+                rendimentoValorDisplay.className = 'valor positivo';
+                rendimentoPercentualDisplay.className = 'valor positivo';
+            } else if (rendimentoValor < 0) {
+                rendimentoValorDisplay.className = 'valor negativo';
+                rendimentoPercentualDisplay.className = 'valor negativo';
+            } else {
+                rendimentoValorDisplay.className = 'valor';
+                rendimentoPercentualDisplay.className = 'valor';
+            }
+        }
+
+        function atualizarVisualMetaAtingida() {
+            if (metaAtingida) {
+                mensagemGlobalContainer.innerHTML = `<div class="meta-atingida-mensagem">🎉 Parabéns! Meta de ${formatarMoeda(META_FIXA_INVESTIMENTO)} em reserva atingida! 🎉</div>`;
+                if (gastosCobertosPorRendimentos) {
+                    calcularBtn.textContent = 'Calcular Aportes (Rendimentos Ativos)';
+                } else {
+                    calcularBtn.textContent = 'Calcular (Meta Atingida - Ativar Rendimentos no Próximo)';
+                }
+            } else {
+                mensagemGlobalContainer.innerHTML = '';
+                calcularBtn.textContent = 'Calcular Divisão Financeira';
+            }
+        }
+
+        function atualizarBarraDeProgresso() {
+            const valorBaseParaProgresso = rawSaldoAtualReserva; 
+            let percentual = 0;
+
+            percentual = Math.min((valorBaseParaProgresso / META_FIXA_INVESTIMENTO) * 100, 100);
+            if (percentual < 0) percentual = 0; 
+            
+            if (valorBaseParaProgresso >= META_FIXA_INVESTIMENTO && !metaAtingida) {
+                metaAtingida = true;
+                gastosCobertosPorRendimentos = false; 
+                salvarDados(); 
+                atualizarVisualMetaAtingida(); 
+                
+                const rendaAtual = parseInputCurrencyValue(rendaFaturadaInput.value);
+                if (rendaFaturadaInput.value && rendaAtual >= 0) { 
+                    calcularDivisaoRenda(false); 
+                }
+            }
+
+            progressBarFill.style.width = percentual.toFixed(2) + '%';
+            progressText.textContent = percentual.toFixed(1) + '%';
+            progressBarContainer.setAttribute('aria-valuenow', percentual.toFixed(1));
+
+            if (percentual > 45) { 
+                progressText.style.color = 'white'; 
+            } else {
+                progressText.style.color = '#1f2937';
+            }
+        }
+        
+        // --- LÓGICA DE APORTE MANUAL ---
+        function adicionarAporteManualmente() {
+            erroAporteManualContainer.innerHTML = '';
+            const valorParaAdicionar = parseInputCurrencyValue(valorAporteManualInput.value);
+
+            if (valorParaAdicionar <= 0) {
+                erroAporteManualContainer.innerHTML = `<p class="error-message">Insira um valor positivo para aportar.</p>`;
+                valorAporteManualInput.focus();
+                return;
+            }
+
+            rawTotalAportado += valorParaAdicionar;
+            totalAportadoDisplay.textContent = formatarMoeda(rawTotalAportado);
+
+            rawSaldoAtualReserva += valorParaAdicionar; 
+            saldoAtualReservaInput.value = formatarMoeda(rawSaldoAtualReserva);
+            if (saldoAtualReservaInput.value) realTimeCurrencyFormat({target: saldoAtualReservaInput}, false);
+
+
+            mostrarFeedback(aporteFeedback, `+ ${formatarMoeda(valorParaAdicionar)} aportado manualmente.`);
+            
+            atualizarDisplayRendimento();
+            salvarDados(); 
+            atualizarBarraDeProgresso(); 
+            
+            valorAporteManualInput.value = '';
+        }
+
+
+        // --- CÁLCULO PRINCIPAL ---
+        function calcularDivisaoRenda(isUserClick = false) { 
+            const rendaFaturada = parseInputCurrencyValue(rendaFaturadaInput.value);
+            
+            // Limpa o resultado anterior ao iniciar um novo cálculo,
+            // a menos que seja um erro de input que precise exibir mensagem no card.
+            if (!resultadoContainer.innerHTML.includes('error-message') || (rendaFaturada > 0) ) {
+                 resultadoContainer.innerHTML = ''; 
+            }
+            
+            if (rendaFaturada <= 0 && !(metaAtingida && rendaFaturada === 0)) {
+                if (isUserClick || (isNaN(rendaFaturada) || rendaFaturada < 0) ) { 
+                    resultadoContainer.innerHTML = `<div class="result-card error-message">Por favor, insira um valor de renda faturada válido e maior que zero.</div>`;
+                    if (rendaFaturada < 0 || isNaN(rendaFaturada)) rendaFaturadaInput.focus();
+                }
+                if (rendaFaturada < 0 || isNaN(rendaFaturada) || (isUserClick && rendaFaturada === 0) ) return;
+            }
+
+            let htmlResultado = '';
+            let aporteParaInvestimentoGarantidoCalculado = 0; 
+
+            if (metaAtingida) {
+                if (gastosCobertosPorRendimentos) {
+                    let valorDaReservaParaRendimento = rawSaldoAtualReserva; 
+                    if (valorDaReservaParaRendimento < META_FIXA_INVESTIMENTO) {
+                        valorDaReservaParaRendimento = META_FIXA_INVESTIMENTO; 
+                    }
+                    
+                    const rendimentoReservaParaGastos = valorDaReservaParaRendimento * 0.01; 
+                    const aporteReservaNovaFase = (rendaFaturada > 0 ? rendaFaturada : 0) * 0.50; 
+                    const aporteProjetosNovaFase = (rendaFaturada > 0 ? rendaFaturada : 0) * 0.50; 
+                    aporteParaInvestimentoGarantidoCalculado = aporteReservaNovaFase;
+
+                    htmlResultado = `
+                        <div class="result-card">
+                            <h3>📊 Resumo Financeiro (Rendimentos Ativos) 🚀</h3>
+                            <p>Renda Faturada Informada: <strong>${formatarMoeda(rendaFaturada > 0 ? rendaFaturada : 0)}</strong></p>
+                            <hr class="my-3 border-gray-200">
+                            <p>Rendimento da Reserva para Gastos Essenciais (1% de ${formatarMoeda(valorDaReservaParaRendimento)}): <span class="valor-destaque">${formatarMoeda(rendimentoReservaParaGastos)}</span></p>
+                            <hr class="my-3 border-gray-200">
+                            <p>Novo Aporte para Invest. Garantido (Reserva): <span class="valor-positivo">${formatarMoeda(aporteReservaNovaFase)}</span></p>
+                            <p>Novo Aporte para Invest. em Projetos (Arriscado): <span class="valor-neutro">${formatarMoeda(aporteProjetosNovaFase)}</span></p>
+                            <hr class="my-3 border-gray-200">
+                            <p class="text-sm">Sua Reserva Acumulada de ${formatarMoeda(rawSaldoAtualReserva)} cobre seus gastos e continua crescendo com novos aportes!</p>
+                        </div>
+                    `;
+                } else {
+                    let gastos = 0;
+                    let investimentoTotalAposGastos = 0;
+                    
+                    if (rendaFaturada <= 1000) { gastos = rendaFaturada * 0.90; }
+                    else if (rendaFaturada <= 1200) { gastos = 900; }
+                    else if (rendaFaturada < 2000) { gastos = 900 + (rendaFaturada - 1200) * 0.75; }
+                    else if (rendaFaturada === 2000) { gastos = rendaFaturada * 0.75; }
+                    else if (rendaFaturada < 3000) { gastos = 1500; }
+                    else if (rendaFaturada === 3000) { gastos = rendaFaturada * 0.50; }
+                    else { 
+                        let gastoFinalParaRenda = 1500;
+                        const gastoBaseInicialParaIncrementos = 1500; const maxIncrementos = 5; 
+                        for (let i = 0; i < maxIncrementos; i++) {
+                            const rendaDoSaltoAlvo = 3000 + (i + 1) * 1000;
+                            const gastoAlvoNoSalto = Math.min(2000, gastoBaseInicialParaIncrementos + (i + 1) * 100);
+                            const gastoNoInicioDoPatamarAnterior = Math.min(2000, gastoBaseInicialParaIncrementos + i * 100);
+                            const aumentoEfetivoParaEsteSalto = gastoAlvoNoSalto - gastoNoInicioDoPatamarAnterior;
+                            if (aumentoEfetivoParaEsteSalto <= 0) { gastoFinalParaRenda = gastoNoInicioDoPatamarAnterior; break; }
+                            const inicioDaTransicaoParaEsteSalto = rendaDoSaltoAlvo - aumentoEfetivoParaEsteSalto;
+                            const fimDaTransicaoParaEsteSalto = rendaDoSaltoAlvo - 0.01;
+                            if (rendaFaturada < inicioDaTransicaoParaEsteSalto) { gastoFinalParaRenda = gastoNoInicioDoPatamarAnterior; break; }
+                            else if (rendaFaturada >= inicioDaTransicaoParaEsteSalto && rendaFaturada <= fimDaTransicaoParaEsteSalto) { gastoFinalParaRenda = gastoNoInicioDoPatamarAnterior + (rendaFaturada - inicioDaTransicaoParaEsteSalto); break; }
+                            else { gastoFinalParaRenda = gastoAlvoNoSalto; if (i === maxIncrementos - 1 || gastoAlvoNoSalto === 2000) break; }
+                        }
+                        gastos = gastoFinalParaRenda;
+                    }
+                    investimentoTotalAposGastos = rendaFaturada - gastos;
+                    if (investimentoTotalAposGastos < 0) investimentoTotalAposGastos = 0;
+
+                    const aporteReservaTransicao = investimentoTotalAposGastos * 0.50; 
+                    const aporteProjetosTransicao = investimentoTotalAposGastos * 0.50; 
+                    aporteParaInvestimentoGarantidoCalculado = aporteReservaTransicao;
+
+                    htmlResultado = `
+                        <div class="result-card">
+                            <h3>📝 Resumo Financeiro (Transição Pós-Meta)</h3>
+                            <p>Renda Faturada Informada: <strong>${formatarMoeda(rendaFaturada)}</strong></p>
+                            <p>Valor para Gastos Essenciais (este ciclo): <span class="valor-negativo">${formatarMoeda(gastos)}</span></p>
+                            <hr class="my-3 border-gray-200">
+                            <p>Aporte para Invest. Garantido (Reserva): <span class="valor-positivo">${formatarMoeda(aporteReservaTransicao)}</span></p>
+                            <p>Aporte para Invest. em Projetos (Arriscado): <span class="valor-neutro">${formatarMoeda(aporteProjetosTransicao)}</span></p>
+                            <hr class="my-3 border-gray-200">
+                            <p class="nota-transicao"><strong>Nota:</strong> Meta de reserva atingida! A partir do <strong>próximo cálculo (clique no botão)</strong>, seus gastos essenciais serão cobertos pelos rendimentos da sua reserva acumulada e a distribuição da renda mudará.</p>
+                        </div>
+                    `;
+                    
+                    if (isUserClick && rendaFaturada > 0) { 
+                        gastosCobertosPorRendimentos = true; 
+                        salvarDados(); 
+                        atualizarVisualMetaAtingida(); 
+                    }
+                }
+            } else {
+                // --- LÓGICA PRÉ-META (ORIGINAL) ---
+                let gastos = 0;
+                let investimentoTotal = 0; 
+
+                if (rendaFaturada <= 1000) {
+                    investimentoTotal = rendaFaturada * 0.10;
+                    gastos = rendaFaturada * 0.90;
+                } else if (rendaFaturada <= 1200) {
+                    gastos = 900;
+                    investimentoTotal = rendaFaturada - gastos;
+                } else if (rendaFaturada < 2000) {
+                    gastos = 900 + (rendaFaturada - 1200) * 0.75;
+                    investimentoTotal = rendaFaturada - gastos;
+                } else if (rendaFaturada === 2000) {
+                    gastos = rendaFaturada * 0.75;
+                    investimentoTotal = rendaFaturada * 0.25;
+                } else if (rendaFaturada < 3000) {
+                    gastos = 1500;
+                    investimentoTotal = rendaFaturada - gastos;
+                } else if (rendaFaturada === 3000) {
+                    gastos = rendaFaturada * 0.50;
+                    investimentoTotal = rendaFaturada * 0.50;
+                } else { 
+                    let gastoFinalParaRenda = 1500;
+                    const gastoBaseInicialParaIncrementos = 1500;
+                    const maxIncrementos = 5; 
+                    for (let i = 0; i < maxIncrementos; i++) {
+                        const rendaDoSaltoAlvo = 3000 + (i + 1) * 1000;
+                        const gastoAlvoNoSalto = Math.min(2000, gastoBaseInicialParaIncrementos + (i + 1) * 100);
+                        const gastoNoInicioDoPatamarAnterior = Math.min(2000, gastoBaseInicialParaIncrementos + i * 100);
+                        const aumentoEfetivoParaEsteSalto = gastoAlvoNoSalto - gastoNoInicioDoPatamarAnterior;
+                        if (aumentoEfetivoParaEsteSalto <= 0) {
+                            gastoFinalParaRenda = gastoNoInicioDoPatamarAnterior; break;
+                        }
+                        const inicioDaTransicaoParaEsteSalto = rendaDoSaltoAlvo - aumentoEfetivoParaEsteSalto;
+                        const fimDaTransicaoParaEsteSalto = rendaDoSaltoAlvo - 0.01;
+                        if (rendaFaturada < inicioDaTransicaoParaEsteSalto) {
+                            gastoFinalParaRenda = gastoNoInicioDoPatamarAnterior; break;
+                        } else if (rendaFaturada >= inicioDaTransicaoParaEsteSalto && rendaFaturada <= fimDaTransicaoParaEsteSalto) {
+                            gastoFinalParaRenda = gastoNoInicioDoPatamarAnterior + (rendaFaturada - inicioDaTransicaoParaEsteSalto); break;
+                        } else {
+                            gastoFinalParaRenda = gastoAlvoNoSalto;
+                            if (i === maxIncrementos - 1 || gastoAlvoNoSalto === 2000) break;
+                        }
+                    }
+                    gastos = gastoFinalParaRenda;
+                    investimentoTotal = rendaFaturada - gastos;
+                }
+
+                const investimentoGarantidoMensal = investimentoTotal * 0.50;
+                const investimentoProjetosMensal = investimentoTotal * 0.50;
+                const rendimentoCDB = investimentoGarantidoMensal * 0.01;
+                aporteParaInvestimentoGarantidoCalculado = investimentoGarantidoMensal;
+
+                htmlResultado = `
+                    <div class="result-card">
+                        <h3>📈 Resumo Financeiro Detalhado</h3>
+                        <p>Renda Faturada Informada: <strong>${formatarMoeda(rendaFaturada)}</strong></p>
+                        <p>Valor para Gastos Essenciais: <span class="valor-negativo">${formatarMoeda(gastos)}</span></p>
+                        <hr class="my-3 border-gray-200">
+                        <p>Aporte para Invest. Garantido (Reserva): <span class="valor-positivo">${formatarMoeda(investimentoGarantidoMensal)}</span></p>
+                        <p>Aporte para Invest. em Projetos (Arriscado): <span class="valor-neutro">${formatarMoeda(investimentoProjetosMensal)}</span></p>
+                        <hr class="my-3 border-gray-200">
+                        <p class="text-sm">Potencial de rendimento do Aporte Garantido no 1º período (CDB a 1% a.m.): <span class="valor-positivo">${formatarMoeda(rendimentoCDB)}</span></p>
+                    </div>
+                `;
+            }
+
+            if (aporteParaInvestimentoGarantidoCalculado > 0 && !resultadoContainer.innerHTML.includes('error-message')) {
+                const cardContentEndIndex = htmlResultado.lastIndexOf('</div>');
+                if (cardContentEndIndex > -1) {
+                    const cardContent = htmlResultado.substring(0, cardContentEndIndex);
+                    htmlResultado = cardContent + 
+                                   `<button id="investirAporteBtn" class="tertiary-button" data-aporte-valor="${aporteParaInvestimentoGarantidoCalculado.toFixed(2)}">Simular Investimento do Aporte (${formatarMoeda(aporteParaInvestimentoGarantidoCalculado)})</button>
+                                    </div>`;
+                }
+            }
+            // Atualiza o container de resultado apenas se não for um erro de input que já exibiu sua própria mensagem
+            if (!( (rendaFaturada <= 0 && isUserClick) || (isNaN(rendaFaturada) || rendaFaturada < 0) )) {
+                 if (htmlResultado.trim() !== '') { // Evita limpar se htmlResultado estiver vazio (ex: renda 0 pós-meta)
+                    resultadoContainer.innerHTML = htmlResultado;
+                 }
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        calcularBtn.addEventListener('click', () => calcularDivisaoRenda(true)); 
+
+        rendaFaturadaInput.addEventListener('focus', function(event) {
+            valorRendaAntesDoInput = event.target.value; // Salva o valor ao focar
+            realTimeCurrencyFormat(event, true); // Formata e dispara 'input' se necessário
+        });
+
+        rendaFaturadaInput.addEventListener('input', function(event) {
+            // Se o evento foi disparado internamente pela formatação, não fazer nada extra aqui.
+            if(event.SINALIZADOR_INTERNO_FORMATACAO) return;
+
+            realTimeCurrencyFormat(event, false); // Formata o valor sem disparar outro 'input'
+
+            const rendaAtualString = rendaFaturadaInput.value;
+            const rendaAtualNumerica = parseInputCurrencyValue(rendaAtualString);
+            const campoEstaVazio = rendaAtualString.trim() === '' || rendaAtualString.replace(/\D/g, '') === '';
+
+            // Se o valor mudou de fato (usuário digitou/apagou) E um resultado estava sendo mantido, limpe-o.
+            if (manterResultadoAposSimulacao && rendaAtualString !== valorRendaAntesDoInput) {
+                resultadoContainer.innerHTML = '';
+                manterResultadoAposSimulacao = false; // Já que o usuário interagiu, não precisa mais manter.
+            }
+
+
+            if (campoEstaVazio) {
+                calcularBtn.disabled = true;
+                if (!manterResultadoAposSimulacao) { // Só limpa se não for para manter (ex: usuário apagou)
+                    resultadoContainer.innerHTML = '';
+                }
+            } else if (rendaAtualNumerica > 0) {
+                calcularBtn.disabled = false;
+                // Se antes estava zerado e agora tem valor, e um resultado estava mantido, limpa.
+                if (valorRendaAntesDoInput.replace(/\D/g, '') === '' && manterResultadoAposSimulacao) {
+                     resultadoContainer.innerHTML = '';
+                     manterResultadoAposSimulacao = false;
+                }
+            } else { // Valor inválido (ex: "R$ ,,") mas não vazio
+                calcularBtn.disabled = true;
+                if (!manterResultadoAposSimulacao) {
+                    resultadoContainer.innerHTML = '';
+                }
+            }
+            
+            // Se o usuário limpou o campo manualmente, e estávamos mantendo o resultado, paramos de manter.
+            if (campoEstaVazio && manterResultadoAposSimulacao) {
+                manterResultadoAposSimulacao = false;
+            }
+        });
+
+
+        rendaFaturadaInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (!calcularBtn.disabled) { 
+                    calcularBtn.click(); 
+                }
+            }
+        });
+        
+        // Listeners para blur e input nos outros campos de moeda
+        [valorAporteManualInput, saldoAtualReservaInput].forEach(input => {
+            input.addEventListener('blur', (event) => realTimeCurrencyFormat(event, false)); // Não precisa disparar 'input' para estes
+            input.addEventListener('focus', (event) => realTimeCurrencyFormat(event, false));
+            input.addEventListener('input', (event) => {
+                 if(event.SINALIZADOR_INTERNO_FORMATACAO) return;
+                 realTimeCurrencyFormat(event, false);
+                 if (input.id === 'saldoAtualReservaInput') {
+                    rawSaldoAtualReserva = parseInputCurrencyValue(saldoAtualReservaInput.value);
+                    atualizarDisplayRendimento();
+                    salvarDados(); 
+                    atualizarBarraDeProgresso(); 
+                 }
+            });
+        });
+        
+        adicionarAporteManualBtn.addEventListener('click', adicionarAporteManualmente);
+        valorAporteManualInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                adicionarAporteManualmente();
+            }
+        });
+
+        resultadoContainer.addEventListener('click', function(event) {
+            if (event.target && event.target.id === 'investirAporteBtn') {
+                const aporteValor = parseFloat(event.target.dataset.aporteValor);
+                if (!isNaN(aporteValor) && aporteValor > 0) {
+                    
+                    rawTotalAportado += aporteValor;
+                    totalAportadoDisplay.textContent = formatarMoeda(rawTotalAportado);
+                    
+                    rawSaldoAtualReserva += aporteValor; 
+                    saldoAtualReservaInput.value = formatarMoeda(rawSaldoAtualReserva); 
+                    if (saldoAtualReservaInput.value) realTimeCurrencyFormat({target: saldoAtualReservaInput}, false);
+
+
+                    mostrarFeedback(aporteFeedback, `+ ${formatarMoeda(aporteValor)} simulado como aporte.`);
+                    atualizarDisplayRendimento();
+                    salvarDados(); 
+                    atualizarBarraDeProgresso(); 
+                    
+                    secaoMetaInvestimento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    event.target.disabled = true; 
+                    calcularBtn.disabled = true; 
+                    
+                    manterResultadoAposSimulacao = true; 
+                    valorRendaAntesDoInput = rendaFaturadaInput.value; // Salva o valor atual (que será o "anterior" no próximo input)
+                    rendaFaturadaInput.value = ''; 
+                    // Não precisa disparar 'input' aqui, o foco no campo pelo usuário fará o necessário.
+                    // Ou, se quiser forçar a atualização do estado do botão calcular:
+                    // rendaFaturadaInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        });
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', carregarDados);
+    </script>
+</body>
+</html>
